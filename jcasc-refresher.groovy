@@ -17,7 +17,7 @@ freeStyleJob('/jenkins/jcasc-refresher') {
     
 shell('''
             cat << 'EOF' > jcasc-refresher.groovy
-            def repoUrl = "https://shaikhm:EXQzY8fryUztgEnbPV2E@gitlab.sinfo-one.it/FDS/internship/devops/jenkins-pipelines.git"
+            def repoUrl = System.getenv("REPO_URL")
             def branch = "master"
             def workspace = "/usr/share/jenkins/jenkins-pipelines"
 
@@ -50,18 +50,18 @@ EOF
 
     shell('''if [ ! -f "jenkins-cli.jar" ]; then
         echo "Downloading Jenkins CLI..."
-        curl -o jenkins-cli.jar http://controller:8080/jnlpJars/jenkins-cli.jar
+        curl -o jenkins-cli.jar $JENKINS_URL/jnlpJars/jenkins-cli.jar
       else
         echo "Jenkins CLI already exists."
       fi
     ''')
 
     shell('''echo "Running Groovy script..."
-      java -jar jenkins-cli.jar -auth shaikhm:1176294762b568f48cf934684e3d7c7ebb -s "${JENKINS_URL}" groovy = < jcasc-refresher.groovy
+      java -jar jenkins-cli.jar -auth $JENKINS_AUTH -s "${JENKINS_URL}" groovy = < jcasc-refresher.groovy
     ''')
 
     shell('''echo "Reloading Jenkins Configuration as Code..."
-      java -jar jenkins-cli.jar -auth shaikhm:1176294762b568f48cf934684e3d7c7ebb -s "${JENKINS_URL}" reload-jcasc-configuration
+      java -jar jenkins-cli.jar -auth $JENKINS_AUTH -s "${JENKINS_URL}" reload-jcasc-configuration
     ''')
   }
 }
