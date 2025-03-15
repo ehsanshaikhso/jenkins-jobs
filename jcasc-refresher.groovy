@@ -17,7 +17,8 @@ freeStyleJob('/jenkins/jcasc-refresher') {
     
 shell('''
             cat << 'EOF' > jcasc-refresher.groovy
-            def repoUrl = System.getenv("REPO_URL")
+            def repo_username_token = System.getenv("REPO_USERNAME_TOKEN")
+            def repoUrl = "https://"+repo_username_token+"@gitlab.sinfo-one.it/FDS/internship/devops/jenkins-pipelines.git"
             def branch = "master"
             def workspace = "/usr/share/jenkins/jenkins-pipelines"
 
