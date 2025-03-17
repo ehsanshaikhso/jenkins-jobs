@@ -17,36 +17,47 @@ freeStyleJob('/jenkins/jcasc-refresher') {
     
 shell('''
             cat << 'EOF' > jcasc-refresher.groovy
-            def repo_username_token = System.getenv("REPO_USERNAME_TOKEN")
-            def repoUrl = "https://"+repo_username_token+"@gitlab.sinfo-one.it/FDS/internship/devops/jenkins-pipelines.git"
-            def branch = "master"
-            def workspace = "/usr/share/jenkins/jenkins-pipelines"
-
+            import com.cloudbees.plugins.credentials.CredentialsProvider
+            import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials
+            import hudson.model.User
+            import jenkins.model.Jenkins
             def runCommand(command, workingDir) {
-                def process = new ProcessBuilder(command.split(" "))
+              def process = new ProcessBuilder(command.split(" "))
                     .directory(new File(workingDir))
                     .redirectErrorStream(true)
                     .start()
-
-                process.inputStream.eachLine { println it }
-                process.waitFor()
+                  process.inputStream.eachLine { println it }
+                  process.waitFor()
             }
+            def credentialsId = "sinfo-one-jenkins-gitlab"
+            def credentials = CredentialsProvider.lookupCredentials(
+              UsernamePasswordCredentials.class,
+              Jenkins.instance,
+              null,
+              null
+            ).find { it.id == credentialsId }
+            if(credentials){
+              def repo_username_token = "${credentials.username}:${credentials.password.toString()}"
+              def repoUrl = "https://"+repo_username_token+"@gitlab.sinfo-one.it/FDS/internship/devops/jenkins-pipelines.git"
+              def branch = "master"
+              def workspace = "/usr/share/jenkins/jenkins-pipelines"
 
-            def repoDir = new File(workspace)
+              def repoDir = new File(workspace)
 
-            if (!repoDir.exists() || repoDir.listFiles().length == 0) {
-                println "Repository Directory not found OR No Files exists in Repository Directory."
+              if (!repoDir.exists() || repoDir.listFiles().length == 0) {
+                  println "Repository Directory not found OR No Files exists in Repository Directory."
+              } 
+              else 
+              {
+                  println "Repository found. Pulling latest changes..."
+                  runCommand("git pull ${repoUrl} ${branch}", workspace)
+                  println "Pull completed successfully!"
+              }
             } 
-            else 
-            {
-                println "Repository found. Pulling latest changes..."
-                runCommand("git pull ${repoUrl} ${branch}", workspace)
-                println "Pull completed successfully!"
-            }
+            else {println "Credentials not found!"}
 EOF
         ''')
-
-
+        
     shell('echo "Listing files after writing Groovy script:" && ls -l')
 
     shell('''if [ ! -f "jenkins-cli.jar" ]; then
